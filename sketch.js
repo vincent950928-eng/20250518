@@ -3,7 +3,7 @@ let hands;
 let predictions = [];
 let playerGesture = "等待中...";
 let computerGesture = "";
-let resultMessage = "請比出手勢！";
+let resultMessage = "比出 👍 開始，👎 結束遊戲";
 let lastResetTime = 0;
 let imgRock, imgPaper, imgScissors;
 let computerImg;
@@ -12,7 +12,7 @@ let lossCount = 0;
 let tieCount = 0;
 let isProcessing = false; // 防止重複發送影格
 let countdownText = "";
-let gameState = "WAITING"; // WAITING, COUNTDOWN, RESULT
+let gameState = "START_MENU"; // START_MENU, WAITING, COUNTDOWN, RESULT
 let particles = []; // 儲存彩帶粒子
 
 function preload() {
@@ -69,8 +69,8 @@ function onResults(results) {
       winCount = 0;
       lossCount = 0;
       tieCount = 0;
-      gameState = "WAITING";
-      resultMessage = "請比出 👍 開始遊戲！";
+      gameState = "START_MENU";
+      resultMessage = "比出 👍 開始，👎 返回選單";
       computerImg = null;
       countdownText = "";
       particles = []; // 清空彩帶
@@ -92,7 +92,7 @@ function onResults(results) {
       // 結果顯示 2 秒後回到等待狀態
       if (millis() - lastResetTime > 2000) {
         gameState = "WAITING";
-        resultMessage = "比出 👍 再次挑戰！";
+        resultMessage = "比出 👍 挑戰，或 👎 結束";
       }
     }
   } else {
@@ -101,6 +101,11 @@ function onResults(results) {
 }
 
 function draw() {
+  if (gameState === "START_MENU") {
+    drawStartMenu();
+    return;
+  }
+
   // 手動控制影格發送給 MediaPipe，避免使用 Camera 物件造成的衝突
   if (video.elt.readyState === 4 && !isProcessing) {
     isProcessing = true;
@@ -180,6 +185,14 @@ function draw() {
   fill(255, 255, 0);
   textAlign(CENTER);
   text(resultMessage, width / 2, height - 50);
+
+  // 加入倒讚結束遊戲的提示詞
+  if (gameState === "WAITING") {
+    fill(255, 200); // 半透明白色
+    textSize(20);
+    text("提示：比出倒讚 👎 即可結束遊戲並歸零分數", width / 2, height - 90);
+  }
+
   textAlign(LEFT);
 
   // 繪製與更新彩帶慶祝動畫
@@ -188,6 +201,37 @@ function draw() {
     particles[i].display();
     if (particles[i].y > height) {
       particles.splice(i, 1); // 掉出畫面後移除，節省效能
+    }
+  }
+}
+
+function drawStartMenu() {
+  background(34); // 深色背景
+  fill(255);
+  textAlign(CENTER, CENTER);
+  
+  // 標題
+  textSize(60);
+  text("手勢猜拳大對決", width / 2, height / 2 - 80);
+  
+  // 按鈕繪製
+  fill(0, 180, 0);
+  rectMode(CENTER);
+  rect(width / 2, height / 2 + 50, 240, 70, 15);
+  
+  // 按鈕文字
+  fill(255);
+  textSize(32);
+  text("開始遊戲", width / 2, height / 2 + 50);
+  rectMode(CORNER); // 恢復預設模式
+}
+
+function mousePressed() {
+  if (gameState === "START_MENU") {
+    // 檢查點擊座標是否在「開始遊戲」按鈕內
+    if (mouseX > width / 2 - 120 && mouseX < width / 2 + 120 &&
+        mouseY > height / 2 + 15 && mouseY < height / 2 + 85) {
+      gameState = "WAITING";
     }
   }
 }
