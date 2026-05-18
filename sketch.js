@@ -11,6 +11,9 @@ let winCount = 0;
 let lossCount = 0;
 let tieCount = 0;
 let isProcessing = false; // 防止重複發送影格
+let countdownText = "";
+let gameState = "WAITING"; // WAITING, COUNTDOWN, RESULT
+let particles = []; // 儲存彩帶粒子
 
 function preload() {
   // 請確保你的資料夾中確實有這些圖片檔案
@@ -53,13 +56,44 @@ function setup() {
 function onResults(results) {
   isProcessing = false; // 處理完畢，開放下一影格
   predictions = results.multiHandLandmarks;
+  
   if (predictions && predictions.length > 0) {
     playerGesture = detectGesture(predictions[0]);
     
-    // 簡單的遊戲邏輯：每隔 3 秒隨機更新一次電腦出拳
-    if (millis() - lastResetTime > 3000) {
-      playGame();
+    // 根據手勢切換狀態
+    if (playerGesture === "開始 (Start)" && gameState === "WAITING") {
+      gameState = "COUNTDOWN";
       lastResetTime = millis();
+    } else if (playerGesture === "結束 (End)") {
+      // 重設所有分數與狀態
+      winCount = 0;
+      lossCount = 0;
+      tieCount = 0;
+      gameState = "WAITING";
+      resultMessage = "請比出 👍 開始遊戲！";
+      computerImg = null;
+      countdownText = "";
+      particles = []; // 清空彩帶
+    }
+
+    // 遊戲流程邏輯
+    if (gameState === "COUNTDOWN") {
+      let elapsed = millis() - lastResetTime;
+      if (elapsed < 3000) {
+        countdownText = Math.ceil(3 - elapsed / 1000);
+        resultMessage = "準備出拳...";
+      } else {
+        playGame(); // 3秒到，判定勝負
+        gameState = "RESULT";
+        countdownText = "";
+        lastResetTime = millis(); // 記錄結果顯示的開始時間
+      }
+    } else if (gameState === "RESULT") {
+      // 結果顯示 2 秒後回到等待狀態
+      if (millis() - lastResetTime > 2000) {
+        gameState = "WAITING";
+        resultMessage = "比出 👍 再次挑戰！";
+      }
     }
   } else {
     playerGesture = "未偵測到手部";
@@ -126,6 +160,14 @@ function draw() {
     image(computerImg, 120, 80, 70, 70);
   }
 
+  // 繪製大大的倒數計時文字
+  if (countdownText !== "") {
+    textSize(150);
+    fill(255, 0, 0); // 紅色倒數
+    textAlign(CENTER, CENTER);
+    text(countdownText, width / 2, height / 2);
+  }
+
   // 顯示計分板 (畫面最下方)
   fill(0, 100);
   rect(0, height - 30, width, 30);
@@ -139,6 +181,15 @@ function draw() {
   textAlign(CENTER);
   text(resultMessage, width / 2, height - 50);
   textAlign(LEFT);
+
+  // 繪製與更新彩帶慶祝動畫
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].display();
+    if (particles[i].y > height) {
+      particles.splice(i, 1); // 掉出畫面後移除，節省效能
+    }
+  }
 }
 
 function detectGesture(landmarks) {
@@ -149,6 +200,15 @@ function detectGesture(landmarks) {
   const middleOpen = isOpen(12, 9);
   const ringOpen = isOpen(16, 13);
   const pinkyOpen = isOpen(20, 17);
+  
+  // 大拇指狀態 (用拇指尖 4 與關節 3 的 Y 座標比較)
+  const thumbUp = landmarks[4].y < landmarks[3].y;
+  const thumbDown = landmarks[4].y > landmarks[3].y;
+
+  // 檢查是否為「讚」(Thumbs Up) -> 開始
+  if (thumbUp && !indexOpen && !middleOpen && !ringOpen && !pinkyOpen) return "開始 (Start)";
+  // 檢查是否為「倒讚」(Thumbs Down) -> 結束/重置
+  if (thumbDown && !indexOpen && !middleOpen && !ringOpen && !pinkyOpen) return "結束 (End)";
 
   if (indexOpen && middleOpen && ringOpen && pinkyOpen) return "布 (Paper)";
   if (indexOpen && middleOpen && !ringOpen && !pinkyOpen) return "剪刀 (Scissors)";
@@ -186,8 +246,41 @@ function playGame() {
   ) {
     resultMessage = "你贏了！";
     winCount++;
+    // 產生彩帶粒子
+    for (let i = 0; i < 150; i++) {
+      particles.push(new Confetti());
+    }
   } else {
     resultMessage = "你輸了！";
     lossCount++;
+  }
+}
+
+// 彩帶粒子類別
+class Confetti {
+  constructor() {
+    this.x = random(width);
+    this.y = random(-height, 0); // 從上方隨機位置掉落
+    this.size = random(5, 15);
+    this.color = color(random(255), random(255), random(255));
+    this.speedX = random(-2, 2);
+    this.speedY = random(3, 8); // 掉落速度
+    this.rotation = random(TWO_PI);
+    this.rotSpeed = random(-0.1, 0.1);
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.rotation += this.rotSpeed;
+  }
+  display() {
+    fill(this.color);
+    noStroke();
+    push();
+    translate(this.x, this.y);
+    rotate(this.rotation);
+    rectMode(CENTER);
+    rect(0, 0, this.size, this.size / 2);
+    pop();
   }
 }
