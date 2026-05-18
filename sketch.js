@@ -67,8 +67,8 @@ function onResults(results) {
     if (playerGesture === "開始 (Start)" && gameState === "WAITING") {
       gameState = "COUNTDOWN";
       lastResetTime = millis();
-    } else if (playerGesture === "結束 (End)" && gameState !== "CONFIRM_EXIT") {
-      // 跳轉至確認介面
+    } else if (playerGesture === "結束 (End)" && (gameState === "WAITING" || gameState === "RESULT")) {
+      // 只在等待或結果畫面時，比出倒讚才跳轉至確認介面，避免倒數中誤觸
       gameState = "CONFIRM_EXIT";
     }
 
@@ -296,6 +296,15 @@ function drawConfirmExit() {
   rectMode(CORNER);
 }
 
+function resetGame() {
+  winCount = 0; lossCount = 0; tieCount = 0;
+  gameState = "START_MENU";
+  resultMessage = "比出 👍 開始，👎 結束遊戲";
+  computerImg = null;
+  countdownText = "";
+  particles = [];
+}
+
 function mousePressed() {
   if (gameState === "START_MENU") {
     // 檢查點擊座標是否在「開始遊戲」按鈕內
@@ -306,6 +315,7 @@ function mousePressed() {
     if (mouseX > buttonX - buttonW / 2 && mouseX < buttonX + buttonW / 2 &&
         mouseY > buttonY - buttonH / 2 && mouseY < buttonY + buttonH / 2) {
       gameState = "WAITING";
+      resultMessage = "請對著鏡頭比出 👍 開始對決！"; // 點擊後立即更新提示
     }
   } else if (gameState === "CONFIRM_EXIT") {
     // 檢查「確定」按鈕
@@ -313,12 +323,7 @@ function mousePressed() {
     if (mouseX > width / 2 - 100 - btnW / 2 && mouseX < width / 2 - 100 + btnW / 2 &&
         mouseY > height / 2 + 50 - btnH / 2 && mouseY < height / 2 + 50 + btnH / 2) {
       // 確定離開：重設所有分數與狀態並返回主選單
-      winCount = 0; lossCount = 0; tieCount = 0;
-      gameState = "START_MENU";
-      resultMessage = "比出 👍 開始，👎 結束遊戲";
-      computerImg = null;
-      countdownText = "";
-      particles = [];
+      resetGame();
     }
     // 檢查「取消」按鈕
     if (mouseX > width / 2 + 100 - btnW / 2 && mouseX < width / 2 + 100 + btnW / 2 &&
