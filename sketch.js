@@ -12,7 +12,10 @@ let lossCount = 0;
 let tieCount = 0;
 let isProcessing = false; // 防止重複發送影格
 let countdownText = "";
-let gameState = "START_MENU"; // START_MENU, WAITING, COUNTDOWN, RESULT
+let gameState = "START_MENU"; // START_MENU, WAITING, COUNTDOWN, RESULT, CONFIRM_EXIT
+let startButtonActive = false;
+let confirmButtonActive = false;
+let cancelButtonActive = false;
 let particles = []; // 儲存彩帶粒子
 
 function preload() {
@@ -64,16 +67,9 @@ function onResults(results) {
     if (playerGesture === "開始 (Start)" && gameState === "WAITING") {
       gameState = "COUNTDOWN";
       lastResetTime = millis();
-    } else if (playerGesture === "結束 (End)") {
-      // 重設所有分數與狀態
-      winCount = 0;
-      lossCount = 0;
-      tieCount = 0;
-      gameState = "START_MENU";
-      resultMessage = "比出 👍 開始，👎 返回選單";
-      computerImg = null;
-      countdownText = "";
-      particles = []; // 清空彩帶
+    } else if (playerGesture === "結束 (End)" && gameState !== "CONFIRM_EXIT") {
+      // 跳轉至確認介面
+      gameState = "CONFIRM_EXIT";
     }
 
     // 遊戲流程邏輯
@@ -103,6 +99,11 @@ function onResults(results) {
 function draw() {
   if (gameState === "START_MENU") {
     drawStartMenu();
+    return;
+  }
+
+  if (gameState === "CONFIRM_EXIT") {
+    drawConfirmExit();
     return;
   }
 
@@ -215,25 +216,84 @@ function drawStartMenu() {
   text("手勢猜拳大對決", width / 2, height / 2 - 80);
   
   // 按鈕繪製
+  let buttonX = width / 2;
+  let buttonY = height / 2 + 50;
+  let buttonW = 240;
+  let buttonH = 70;
+  let buttonRadius = 15;
+
+  let mouseOverStartButton = mouseX > buttonX - buttonW / 2 && mouseX < buttonX + buttonW / 2 &&
+                             mouseY > buttonY - buttonH / 2 && mouseY < buttonY + buttonH / 2;
+
+  push();
+  translate(buttonX, buttonY);
+  if (mouseOverStartButton && mouseIsPressed) {
+    scale(0.95); // Slight scale down
+  }
+  
   fill(0, 180, 0);
   rectMode(CENTER);
-  rect(width / 2, height / 2 + 50, 240, 70, 15);
-  
-  // 按鈕文字
+  rect(0, 0, buttonW, buttonH, buttonRadius); // Draw relative to translated origin
   fill(255);
   textSize(32);
-  text("開始遊戲", width / 2, height / 2 + 50);
-  rectMode(CORNER); // 恢復預設模式
+  text("開始遊戲", 0, 0); // Draw relative to translated origin
+  pop(); // Restore transformations
 }
 
-function mousePressed() {
-  if (gameState === "START_MENU") {
-    // 檢查點擊座標是否在「開始遊戲」按鈕內
-    if (mouseX > width / 2 - 120 && mouseX < width / 2 + 120 &&
-        mouseY > height / 2 + 15 && mouseY < height / 2 + 85) {
-      gameState = "WAITING";
-    }
+function drawConfirmExit() {
+  background(34); // 深色背景
+  fill(255);
+  textAlign(CENTER, CENTER);
+  
+  // 詢問文字
+  textSize(40);
+  text("確定要結束遊戲嗎？", width / 2, height / 2 - 50);
+  
+  // "確定" 按鈕
+  let confirmButtonX = width / 2 - 100;
+  let confirmButtonY = height / 2 + 50;
+  let confirmButtonW = 120;
+  let confirmButtonH = 60;
+  let confirmButtonRadius = 10;
+
+  let mouseOverConfirmButton = mouseX > confirmButtonX - confirmButtonW / 2 && mouseX < confirmButtonX + confirmButtonW / 2 &&
+                               mouseY > confirmButtonY - confirmButtonH / 2 && mouseY < confirmButtonY + confirmButtonH / 2;
+
+  push();
+  translate(confirmButtonX, confirmButtonY);
+  if (mouseOverConfirmButton && mouseIsPressed) {
+    scale(0.95);
   }
+
+  rectMode(CENTER);
+  fill(200, 50, 50); // 紅色
+  rect(0, 0, confirmButtonW, confirmButtonH, confirmButtonRadius);
+  fill(255);
+  textSize(24);
+  text("確定", 0, 0);
+  pop();
+
+  // 「取消」按鈕
+  let cancelButtonX = width / 2 + 100;
+  let cancelButtonY = height / 2 + 50;
+  let cancelButtonW = 120;
+  let cancelButtonH = 60;
+  let cancelButtonRadius = 10;
+
+  let mouseOverCancelButton = mouseX > cancelButtonX - cancelButtonW / 2 && mouseX < cancelButtonX + cancelButtonW / 2 &&
+                              mouseY > cancelButtonY - cancelButtonH / 2 && mouseY < cancelButtonY + cancelButtonH / 2;
+
+  push();
+  translate(cancelButtonX, cancelButtonY);
+  if (mouseOverCancelButton && mouseIsPressed) {
+    scale(0.95);
+  }
+
+  fill(100); // 灰色
+  rect(width / 2 + 100, height / 2 + 50, 120, 60, 10);
+  fill(255);
+  text("取消", width / 2 + 100, height / 2 + 50);
+  rectMode(CORNER);
 }
 
 function detectGesture(landmarks) {
