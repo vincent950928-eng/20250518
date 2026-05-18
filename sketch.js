@@ -12,10 +12,7 @@ let lossCount = 0;
 let tieCount = 0;
 let isProcessing = false; // 防止重複發送影格
 let countdownText = "";
-let gameState = "START_MENU"; // START_MENU, WAITING, COUNTDOWN, RESULT, CONFIRM_EXIT
-let startButtonActive = false;
-let confirmButtonActive = false;
-let cancelButtonActive = false;
+let gameState = "WAITING"; // WAITING, COUNTDOWN, RESULT, CONFIRM_EXIT
 let particles = []; // 儲存彩帶粒子
 
 function preload() {
@@ -97,11 +94,6 @@ function onResults(results) {
 }
 
 function draw() {
-  if (gameState === "START_MENU") {
-    drawStartMenu();
-    return;
-  }
-
   if (gameState === "CONFIRM_EXIT") {
     drawConfirmExit();
     return;
@@ -206,40 +198,6 @@ function draw() {
   }
 }
 
-function drawStartMenu() {
-  background(34); // 深色背景
-  fill(255);
-  textAlign(CENTER, CENTER);
-  
-  // 標題
-  textSize(60);
-  text("手勢猜拳大對決", width / 2, height / 2 - 80);
-  
-  // 按鈕繪製
-  let buttonX = width / 2;
-  let buttonY = height / 2 + 50;
-  let buttonW = 240;
-  let buttonH = 70;
-  let buttonRadius = 15;
-
-  let mouseOverStartButton = mouseX > buttonX - buttonW / 2 && mouseX < buttonX + buttonW / 2 &&
-                             mouseY > buttonY - buttonH / 2 && mouseY < buttonY + buttonH / 2;
-
-  push();
-  translate(buttonX, buttonY);
-  if (mouseOverStartButton && mouseIsPressed) {
-    scale(0.95); // Slight scale down
-  }
-  
-  fill(0, 180, 0);
-  rectMode(CENTER);
-  rect(0, 0, buttonW, buttonH, buttonRadius); // Draw relative to translated origin
-  fill(255);
-  textSize(32);
-  text("開始遊戲", 0, 0); // Draw relative to translated origin
-  pop(); // Restore transformations
-}
-
 function drawConfirmExit() {
   background(34); // 深色背景
   fill(255);
@@ -298,26 +256,15 @@ function drawConfirmExit() {
 
 function resetGame() {
   winCount = 0; lossCount = 0; tieCount = 0;
-  gameState = "START_MENU";
-  resultMessage = "比出 👍 開始，👎 結束遊戲";
+  gameState = "WAITING";
+  resultMessage = "請比出 👍 開始對決！";
   computerImg = null;
   countdownText = "";
   particles = [];
 }
 
 function mousePressed() {
-  if (gameState === "START_MENU") {
-    // 檢查點擊座標是否在「開始遊戲」按鈕內
-    let buttonX = width / 2;
-    let buttonY = height / 2 + 50;
-    let buttonW = 240;
-    let buttonH = 70;
-    if (mouseX > buttonX - buttonW / 2 && mouseX < buttonX + buttonW / 2 &&
-        mouseY > buttonY - buttonH / 2 && mouseY < buttonY + buttonH / 2) {
-      gameState = "WAITING";
-      resultMessage = "請對著鏡頭比出 👍 開始對決！"; // 點擊後立即更新提示
-    }
-  } else if (gameState === "CONFIRM_EXIT") {
+  if (gameState === "CONFIRM_EXIT") {
     // 檢查「確定」按鈕
     let btnW = 120, btnH = 60;
     if (mouseX > width / 2 - 100 - btnW / 2 && mouseX < width / 2 - 100 + btnW / 2 &&
