@@ -296,6 +296,38 @@ function drawConfirmExit() {
   rectMode(CORNER);
 }
 
+function mousePressed() {
+  if (gameState === "START_MENU") {
+    // 檢查點擊座標是否在「開始遊戲」按鈕內
+    let buttonX = width / 2;
+    let buttonY = height / 2 + 50;
+    let buttonW = 240;
+    let buttonH = 70;
+    if (mouseX > buttonX - buttonW / 2 && mouseX < buttonX + buttonW / 2 &&
+        mouseY > buttonY - buttonH / 2 && mouseY < buttonY + buttonH / 2) {
+      gameState = "WAITING";
+    }
+  } else if (gameState === "CONFIRM_EXIT") {
+    // 檢查「確定」按鈕
+    let btnW = 120, btnH = 60;
+    if (mouseX > width / 2 - 100 - btnW / 2 && mouseX < width / 2 - 100 + btnW / 2 &&
+        mouseY > height / 2 + 50 - btnH / 2 && mouseY < height / 2 + 50 + btnH / 2) {
+      // 確定離開：重設所有分數與狀態並返回主選單
+      winCount = 0; lossCount = 0; tieCount = 0;
+      gameState = "START_MENU";
+      resultMessage = "比出 👍 開始，👎 結束遊戲";
+      computerImg = null;
+      countdownText = "";
+      particles = [];
+    }
+    // 檢查「取消」按鈕
+    if (mouseX > width / 2 + 100 - btnW / 2 && mouseX < width / 2 + 100 + btnW / 2 &&
+        mouseY > height / 2 + 50 - btnH / 2 && mouseY < height / 2 + 50 + btnH / 2) {
+      gameState = "WAITING";
+    }
+  }
+}
+
 function detectGesture(landmarks) {
   // 判斷手指是否伸直 (y 座標越小代表越高)
   const isOpen = (tip, mcp) => landmarks[tip].y < landmarks[mcp].y;
